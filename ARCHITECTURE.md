@@ -32,21 +32,32 @@ C4Context
 ## Containers (C4Container)
 
 ```mermaid
-C4Container
-  title Introduction POC - Containers
-  Container(browser, "Frontend SPA", "Vite + React", "Renders UI and calls Orchestrator APIs")
-  Container(orchestrator, "Orchestrator Service", "Spring Boot (Java)", "Exposes /api/sales and coordinates PDF & Email flows")
-  Container(pdfsvc, "PDF Service", "Python", "/generate-pdf - returns PDF bytes")
-  Container(notification, "Notification Service", "Node.js", "/email/send - queues/sends emails")
-  Container_Db(sqldb, "Sales DB", "SQLite", "Persisted sales")
+flowchart TB
+    %% Containers
+    subgraph system["Introduction POC System"]
+        browser["Frontend SPA\n[Vite + React]\nRenders UI and calls APIs"]
+        orchestrator["Orchestrator Service\n[Spring Boot]\nCoordinates flows"]
+        pdfsvc["PDF Service\n[Python]\nGenerates PDF files"]
+        notification["Notification Service\n[Node.js]\nSends emails"]
+        sqldb[("Sales DB\n[SQLite]\nStores sales")]
+    end
 
-  Rel(browser, orchestrator, "HTTP JSON - calls /api/sales (SalesController.processSale)")
-  Rel(orchestrator, sqldb, "JDBC/SQL - saveSale(...) persists sale")
-  Rel(orchestrator, pdfsvc, "HTTP POST - generatePdf(...) (synchronous)")
-  Rel(orchestrator, notification, "HTTP POST - sendInvoiceEmail(...) (fire-and-forget)")
-  Rel(notification, sqldb, "(optional) read sales metadata if needed")
+    %% Relationships
+    browser -->|"HTTP/JSON\n/api/sales"| orchestrator
+    orchestrator -->|"JDBC/SQL\nsaveSale()"| sqldb
+    orchestrator -->|"HTTP POST\ngeneratePdf() [sync]"| pdfsvc
+    orchestrator -->|"HTTP POST\nsendEmail() [async]"| notification
+    notification -.->|"optional read"| sqldb
 
-  Note(orchestrator, "See: orchestrator-service/src/main/java/com/invoice/orchestrator/service/SalesService.java\nMethod: processSale(SaleRequest)\nFlow: saveSale → generatePdf (sync) → sendInvoiceEmail (async)")
+    %% Styling
+    classDef container fill:#1168bd,stroke:#0b4884,color:#ffffff
+    classDef database fill:#2c3e50,stroke:#2c3e50,color:#ffffff
+    class browser,orchestrator,pdfsvc,notification container
+    class sqldb database
+
+    %% Note
+    note["orchestrator-service/.../SalesService.java\nprocessSale(): save → pdf → email"]
+    orchestrator -.- note
 ```
 
 ---
@@ -54,24 +65,34 @@ C4Container
 ## Component (C4Component) — Orchestrator Service
 
 ```mermaid
-C4Component
-  title Orchestrator Service - Components
-  Container(orchestrator, "Orchestrator Service", "Spring Boot", "")
+flowchart TB
+    %% Components
+    subgraph orchestrator["Orchestrator Service [Spring Boot]"]
+        direction TB
+        api["SalesController\n[REST Controller]\nExposes /api/sales"]
+        service["SalesService\n[Service]\nOrchestrates processing"]
+        repo["SaleRepository\n[JPA Repository]\nPersists sales"]
+        pdfClient["PdfServiceClient\n[HTTP Client]\nGenerates PDFs"]
+        emailClient["EmailServiceClient\n[HTTP Client]\nSends emails"]
+        security["ApiKeyFilter\n[Filter]\nAPI security"]
+    end
 
-  Component(api, "SalesController", "REST Controller", "Exposes /api/sales and delegates to SalesService")
-  Component(service, "SalesService", "Service", "Orchestrates sale processing: save → pdf → email")
-  Component(repo, "SaleRepository", "JPA Repository", "Persists Sale entities to SQLite")
-  Component(pdfClient, "PdfServiceClient", "HTTP Client", "Calls PDF service")
-  Component(emailClient, "EmailServiceClient", "HTTP Client", "Calls Notification service")
-  Component(security, "ApiKeyFilter", "Filter", "Protects endpoints via API key")
+    %% Relationships
+    security -->|protects| api
+    api -->|"processSale(request)"| service
+    service -->|"1. saveSale()"| repo
+    service -->|"2. generatePdf() [sync]"| pdfClient
+    service -->|"3. sendEmail() [async]"| emailClient
 
-  Rel(api, service, "calls → processSale(saleRequest)")
-  Rel(service, repo, "step 1 → saveSale(...) persists sale")
-  Rel(service, pdfClient, "step 2 → pdfServiceClient.generatePdf(...) (sync)")
-  Rel(service, emailClient, "step 3 → emailServiceClient.sendInvoiceEmail(...) (async)")
-  Rel(security, api, "protects → API endpoints")
+    %% Styling
+    classDef component fill:#85bbf0,stroke:#5d82a8,color:#000000
+    classDef primary fill:#1168bd,stroke:#0b4884,color:#ffffff
+    class api,security component
+    class service,repo,pdfClient,emailClient primary
 
-  Note(service, "Implementation: orchestrator-service/src/main/java/com/invoice/orchestrator/service/SalesService.java\nMethod: processSale(SaleRequest) - coordinates the end-to-end flow (save, pdf, email)")
+    %% Note
+    note["orchestrator-service/.../SalesService.java\nprocessSale(): coordinates end-to-end flow"]
+    service -.- note
 ```
 
 ---
@@ -109,4 +130,4 @@ El diagrama muestra el flujo orquestador implementado por `SalesService.processS
 2. **PDF**: Se solicita al `pdf-service` la generación síncrona de la factura.
 3. **Email**: Se envía una petición asíncrona al `notification-service` para el envío del email.
 
-El flujo principal continúa incluso si el envío del email falla, ya que la venta está persistida.
+El flujo principal continúa incluso si el envío del email falla, ya que la venta persiste en base de datos.
