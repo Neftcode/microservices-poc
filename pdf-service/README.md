@@ -1,5 +1,15 @@
 # Microservicio B - Generador de PDF (Python FastAPI)
 
+## Navegación
+
+- [⬅️ Volver al README principal](../README.md)
+- [📐 Ver Arquitectura C4](../ARCHITECTURE.md)
+- [🔧 Orchestrator Service](../orchestrator-service/README.md)
+- [📧 Notification Service](../notification-service/README.md)
+- [🖥️ Frontend](../frontend/README.md)
+
+---
+
 ## Descripción
 
 Microservicio que realiza la generación de facturas en formato PDF. Recibe información de ventas y genera un documento PDF con los detalles de la transacción.

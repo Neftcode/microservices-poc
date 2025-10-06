@@ -1,5 +1,15 @@
 # Frontend - Sistema de Facturación (React + Vite)
 
+## Navegación
+
+- [⬅️ Volver al README principal](../README.md)
+- [📐 Ver Arquitectura C4](../ARCHITECTURE.md)
+- [🔧 Orchestrator Service](../orchestrator-service/README.md)
+- [📄 PDF Service](../pdf-service/README.md)
+- [📧 Notification Service](../notification-service/README.md)
+
+---
+
 ## Descripción
 
 Aplicación web SPA (Single Page Application) construida con React y Vite que permite crear ventas y generar facturas electrónicas.

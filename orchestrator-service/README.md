@@ -1,5 +1,15 @@
 # Microservicio A - Orquestador (Java Spring Boot)
 
+## Navegación
+
+- [⬅️ Volver al README principal](../README.md)
+- [📐 Ver Arquitectura C4](../ARCHITECTURE.md)
+- [📄 PDF Service](../pdf-service/README.md)
+- [📧 Notification Service](../notification-service/README.md)
+- [🖥️ Frontend](../frontend/README.md)
+
+---
+
 ## Descripción
 
 Microservicio principal que actúa como orquestador. Responsable de:

@@ -1,5 +1,15 @@
 # Microservicio C - Notificaciones por Email (Node.js)
 
+## Navegación
+
+- [⬅️ Volver al README principal](../README.md)
+- [📐 Ver Arquitectura C4](../ARCHITECTURE.md)
+- [🔧 Orchestrator Service](../orchestrator-service/README.md)
+- [📄 PDF Service](../pdf-service/README.md)
+- [🖥️ Frontend](../frontend/README.md)
+
+---
+
 ## Descripción
 
 Microservicio que realiza el envío de notificaciones por correo electrónico. Recibe facturas y las envía a los clientes utilizando Nodemailer con Gmail.

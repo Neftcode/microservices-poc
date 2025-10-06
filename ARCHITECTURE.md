@@ -173,18 +173,18 @@ flowchart TD
     Compensate --> Throw[❌ throw RuntimeException<br/>Error al procesar la venta]
     Throw --> End
 
-    style Start fill:#90EE90
-    style End fill:#FFB6C6
-    style Step1 fill:#ADD8E6
-    style Step2 fill:#ADD8E6
-    style Step3 fill:#ADD8E6
-    style WaitPDF fill:#FFE4B5
-    style HTTPPost2 fill:#E6E6FA
-    style SaveDB fill:#DDA0DD
-    style Catch fill:#FF6B6B
-    style Throw fill:#FF6B6B
-    style Return fill:#90EE90
-    style Compensate fill:#FFA07A
+    style Start fill:#2ECC71,stroke:#27AE60,stroke-width:3px,color:#fff
+    style End fill:#E74C3C,stroke:#C0392B,stroke-width:3px,color:#fff
+    style Step1 fill:#3498DB,stroke:#2980B9,stroke-width:2px,color:#fff
+    style Step2 fill:#3498DB,stroke:#2980B9,stroke-width:2px,color:#fff
+    style Step3 fill:#3498DB,stroke:#2980B9,stroke-width:2px,color:#fff
+    style WaitPDF fill:#F39C12,stroke:#E67E22,stroke-width:2px,color:#000
+    style HTTPPost2 fill:#9B59B6,stroke:#8E44AD,stroke-width:2px,color:#fff
+    style SaveDB fill:#8E44AD,stroke:#6C3483,stroke-width:2px,color:#fff
+    style Catch fill:#E74C3C,stroke:#C0392B,stroke-width:3px,color:#fff
+    style Throw fill:#C0392B,stroke:#A93226,stroke-width:3px,color:#fff
+    style Return fill:#27AE60,stroke:#1E8449,stroke-width:3px,color:#fff
+    style Compensate fill:#E67E22,stroke:#D35400,stroke-width:2px,color:#fff
 ```
 
 ### Descripción del flujo del método `processSale`
