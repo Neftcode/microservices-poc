@@ -1,0 +1,84 @@
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# IntelliJ IDEA
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# VS Code
+.vscode/
+.settings/
+.classpath
+.project
+
+# Environment variables
+# .env
+
+# SQLite database files
+*.db
+/data/
+
+# Logs
+*.log
+/logs/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+env/
+venv/
+ENV/
+.venv/
+env.bak/
+venv.bak/
+
+# Node.js
+node_modules/
+npm-debug.log
+yarn-error.log
+yarn-debug.log
+.pnpm-debug.log
+.next/
+out/
+dist/
+build/
+.cache/
+.idea/
+*.sublime-workspace
+*.sublime-project
+*.swp
+*.swo
+*.bak
+*.tmp
+
+# React
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+build/
+coverage/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+.vscode/
+.idea/
+*.log
+*.tsbuildinfo
+*.rpt2_cache/
+*.rts2_cache_cjs/
+*.rts2_cache_es/
+*.rts2_cache_umd/
+*.rts2_cache_systemjs/

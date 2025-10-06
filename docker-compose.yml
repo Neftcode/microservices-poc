@@ -1,0 +1,100 @@
+version: '3.8'
+
+services:
+  # Microservicio A - Orquestador (Java Spring Boot)
+  orchestrator-service:
+    build:
+      context: ./orchestrator-service
+      dockerfile: Dockerfile
+    container_name: orchestrator-service
+    ports:
+      - "8080:8080"
+    environment:
+      - ORCHESTRATOR_API_KEY=${ORCHESTRATOR_API_KEY:-orchestrator-secret-key-123456789}
+      - PDF_SERVICE_URL=http://localhost:8081
+      - PDF_SERVICE_API_KEY=${PDF_SERVICE_API_KEY:-pdf-service-secret-key-987654321}
+      - EMAIL_SERVICE_URL=http://localhost:8082
+      - EMAIL_SERVICE_API_KEY=${EMAIL_SERVICE_API_KEY:-email-service-secret-key-abcdef123}
+      - DB_PATH=./data/sales.db
+    volumes:
+      - orchestrator-data:./data
+    networks:
+      - microservices-network
+    depends_on:
+      - pdf-service
+      - notification-service
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Microservicio B - Generador de PDF (Python FastAPI)
+  pdf-service:
+    build:
+      context: ./pdf-service
+      dockerfile: Dockerfile
+    container_name: pdf-service
+    ports:
+      - "8081:8081"
+    environment:
+      - PDF_SERVICE_API_KEY=${PDF_SERVICE_API_KEY:-pdf-service-secret-key-987654321}
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # Microservicio C - Notificaciones (Node.js)
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: notification-service
+    ports:
+      - "8082:8082"
+    environment:
+      - EMAIL_SERVICE_API_KEY=${EMAIL_SERVICE_API_KEY:-email-service-secret-key-abcdef123}
+      - GMAIL_USER=${GMAIL_USER}
+      - GMAIL_APP_PASSWORD=${GMAIL_APP_PASSWORD}
+    networks:
+      - microservices-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # Frontend - React SPA
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_URL=http://localhost:8080
+    networks:
+      - microservices-network
+    depends_on:
+      - orchestrator-service
+    restart: unless-stopped
+
+# Volúmenes para persistencia de datos
+volumes:
+  orchestrator-data:
+    driver: local
+
+# Red para comunicación entre servicios
+networks:
+  microservices-network:
+    driver: bridge
