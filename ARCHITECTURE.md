@@ -124,146 +124,200 @@ C4Component
 
 ---
 
-## Nivel 4: Diagrama de código
+## Nivel 4: Diagrama de Código
 
-El diagrama de código muestra el flujo detallado del método `processSale` de la clase `SalesService`.
+El diagrama de código muestra la estructura interna de la clase `SalesService` con sus dependencias, métodos y relaciones.
 
 ```mermaid
-flowchart TD
-    Start([Inicio: processSale]) --> Log1[📝 Log: Iniciando procesamiento de venta]
+classDiagram
+    class SalesService {
+        -SaleRepository saleRepository
+        -PdfServiceClient pdfServiceClient
+        -EmailServiceClient emailServiceClient
+        -ObjectMapper objectMapper
+        +SalesService(saleRepository, pdfServiceClient, emailServiceClient)
+        +Sale findSaleById(Long id)
+        +byte[] processSale(SaleRequest saleRequest) @Transactional
+        -Sale saveSale(SaleRequest saleRequest)
+    }
 
-    Log1 --> Step1[🔄 Paso 1: saveSale]
-    Step1 --> CalcTotal[Calcular totalAmount<br/>suma de productos]
-    CalcTotal --> SerializeJSON[Serializar productos a JSON<br/>ObjectMapper.writeValueAsString]
-    SerializeJSON --> CreateEntity[Crear entidad Sale:<br/>- customerName<br/>- customerIdentification<br/>- customerEmail<br/>- totalAmount<br/>- productsJson]
-    CreateEntity --> SaveDB[(saleRepository.save)]
-    SaveDB --> LogDB[📝 Log: Venta guardada con ID]
+    class SaleRequest {
+        +CustomerInfo customer
+        +List~ProductInfo~ products
+    }
 
-    LogDB --> Step2[🔄 Paso 2: pdfServiceClient.generatePdf]
-    Step2 --> PrepHeaders1[Preparar headers:<br/>Content-Type: application/json<br/>X-API-Key: pdfServiceApiKey]
-    PrepHeaders1 --> HTTPPost1[POST http://pdf-service:8081/generate-pdf]
-    HTTPPost1 --> WaitPDF[⏳ ESPERAR respuesta<br/>COMUNICACIÓN SÍNCRONA]
-    WaitPDF --> CheckPDF{Status == 200<br/>y body != null?}
+    class CustomerInfo {
+        +String name
+        +String identification
+        +String email
+    }
 
-    CheckPDF -->|No| ErrorPDF[❌ throw RuntimeException<br/>Error al generar PDF]
-    CheckPDF -->|Sí| LogPDF[📝 Log: PDF generado exitosamente]
+    class ProductInfo {
+        +String name
+        +BigDecimal price
+        +int quantity
+        +BigDecimal total
+    }
 
-    LogPDF --> Step3[🔄 Paso 3: emailServiceClient.sendInvoiceEmail]
-    Step3 --> EncodeB64[Codificar PDF a Base64<br/>Base64.encode pdfBytes]
-    EncodeB64 --> PrepPayload[Preparar payload:<br/>- customer<br/>- products<br/>- pdfBase64]
-    PrepPayload --> PrepHeaders2[Preparar headers:<br/>Content-Type: application/json<br/>X-API-Key: emailServiceApiKey]
-    PrepHeaders2 --> HTTPPost2[POST http://email-service:8082/send-invoice]
-    HTTPPost2 --> CheckEmail{Status == 202<br/>ACCEPTED?}
+    class Sale {
+        +Long id
+        +String customerName
+        +String customerIdentification
+        +String customerEmail
+        +BigDecimal totalAmount
+        +String productsJson
+        +Timestamp createdAt
+    }
 
-    CheckEmail -->|Sí| LogEmailOK[📝 Log: Email aceptado<br/>procesamiento asíncrono]
-    CheckEmail -->|No| LogEmailWarn[⚠️ Log: Respuesta inesperada<br/>operación no crítica]
+    class SaleRepository {
+        <<interface>>
+        +Optional~Sale~ findById(Long id)
+        +Sale save(Sale sale)
+    }
 
-    LogEmailOK --> LogSuccess[📝 Log: Venta procesada exitosamente]
-    LogEmailWarn --> LogSuccess
+    class PdfServiceClient {
+        -RestTemplate restTemplate
+        -String pdfServiceUrl
+        -String pdfServiceApiKey
+        +byte[] generatePdf(SaleRequest request)
+    }
 
-    LogSuccess --> Return[✅ return pdfBytes]
-    Return --> End([Fin])
+    class EmailServiceClient {
+        -RestTemplate restTemplate
+        -String emailServiceUrl
+        -String emailServiceApiKey
+        +boolean sendInvoiceEmail(SaleRequest request, byte[] pdfBytes)
+    }
 
-    ErrorPDF --> Catch[❌ catch Exception]
-    Step1 -.->|Error| Catch
-    Step2 -.->|Error| Catch
+    class ObjectMapper {
+        <<Jackson>>
+        +String writeValueAsString(Object value)
+    }
 
-    Catch --> LogError[📝 Log: Error al procesar venta]
-    LogError --> Compensate[💡 PATRON: Aquí se implementaría<br/>compensación rollback]
-    Compensate --> Throw[❌ throw RuntimeException<br/>Error al procesar la venta]
-    Throw --> End
+    class RestTemplate {
+        <<Spring>>
+        +ResponseEntity exchange(url, method, entity, responseType)
+    }
 
-    style Start fill:#2ECC71,stroke:#27AE60,stroke-width:3px,color:#fff
-    style End fill:#E74C3C,stroke:#C0392B,stroke-width:3px,color:#fff
-    style Step1 fill:#3498DB,stroke:#2980B9,stroke-width:2px,color:#fff
-    style Step2 fill:#3498DB,stroke:#2980B9,stroke-width:2px,color:#fff
-    style Step3 fill:#3498DB,stroke:#2980B9,stroke-width:2px,color:#fff
-    style WaitPDF fill:#F39C12,stroke:#E67E22,stroke-width:2px,color:#000
-    style HTTPPost2 fill:#9B59B6,stroke:#8E44AD,stroke-width:2px,color:#fff
-    style SaveDB fill:#8E44AD,stroke:#6C3483,stroke-width:2px,color:#fff
-    style Catch fill:#E74C3C,stroke:#C0392B,stroke-width:3px,color:#fff
-    style Throw fill:#C0392B,stroke:#A93226,stroke-width:3px,color:#fff
-    style Return fill:#27AE60,stroke:#1E8449,stroke-width:3px,color:#fff
-    style Compensate fill:#E67E22,stroke:#D35400,stroke-width:2px,color:#fff
+    %% Relaciones
+    SalesService --> SaleRepository : usa
+    SalesService --> PdfServiceClient : usa (síncrono)
+    SalesService --> EmailServiceClient : usa (asíncrono)
+    SalesService --> ObjectMapper : usa
+    SalesService ..> SaleRequest : recibe
+    SalesService ..> Sale : crea/retorna
+
+    SaleRequest *-- CustomerInfo : contiene
+    SaleRequest *-- ProductInfo : contiene lista
+
+    PdfServiceClient --> RestTemplate : usa
+    EmailServiceClient --> RestTemplate : usa
+
+    SaleRepository ..> Sale : gestiona
+
+    %% Notas de implementación
+    note for SalesService "Orquesta el flujo completo:\n1. saveSale() - Persistencia\n2. generatePdf() - Comunicación SYNC\n3. sendInvoiceEmail() - Comunicación ASYNC\n\n@Transactional garantiza rollback"
+
+    note for PdfServiceClient "Comunicación SÍNCRONA\nBloquea hasta recibir PDF\nPOST /generate-pdf\nHeader: X-API-Key"
+
+    note for EmailServiceClient "Comunicación ASÍNCRONA\nRetorna 202 Accepted inmediato\nPOST /send-invoice\nHeader: X-API-Key"
 ```
 
-### Descripción del flujo del método `processSale`
+### Descripción de la Clase `SalesService`
 
-**Ubicación**: `orchestrator-service/src/main/java/com/invoice/orchestrator/service/SalesService.java:62`
+**Ubicación**: `orchestrator-service/src/main/java/com/invoice/orchestrator/service/SalesService.java`
 
-#### Firma del método
-```java
-@Transactional
-public byte[] processSale(SaleRequest saleRequest)
+#### Responsabilidades
+
+La clase `SalesService` actúa como **orquestador principal** del sistema, implementando el patrón **Saga Orchestrator**:
+
+1. **Coordinar el flujo completo de venta**
+2. **Gestionar transacciones** con Spring `@Transactional`
+3. **Integrar servicios externos** (PDF y Email)
+4. **Manejar errores y compensaciones**
+
+#### Dependencias Inyectadas
+
+| Dependencia | Tipo | Responsabilidad |
+|------------|------|-----------------|
+| `saleRepository` | `SaleRepository` | Persistencia de ventas en SQLite |
+| `pdfServiceClient` | `PdfServiceClient` | Generación síncrona de PDF |
+| `emailServiceClient` | `EmailServiceClient` | Envío asíncrono de email |
+| `objectMapper` | `ObjectMapper` | Serialización JSON de productos |
+
+#### Métodos Públicos
+
+**1. `processSale(SaleRequest saleRequest): byte[]`**
+- **Anotación**: `@Transactional`
+- **Flujo**:
+  1. `saveSale()` → Persiste en BD
+  2. `pdfServiceClient.generatePdf()` → Genera PDF (SYNC)
+  3. `emailServiceClient.sendInvoiceEmail()` → Envía email (ASYNC)
+- **Retorna**: Bytes del PDF generado
+- **Excepciones**: `RuntimeException` en caso de error
+
+**2. `findSaleById(Long id): Sale`**
+- Busca una venta por su ID
+- **Excepciones**: `RuntimeException` si no existe
+
+#### Método Privado
+
+**`saveSale(SaleRequest saleRequest): Sale`**
+- Calcula total sumando `product.getTotal()` de cada producto
+- Serializa productos a JSON con `ObjectMapper`
+- Crea entidad `Sale` con datos del request
+- Persiste usando `saleRepository.save()`
+
+#### Flujo del Método `processSale`
+
+```
+processSale(SaleRequest)
+    │
+    ├─► saveSale()
+    │     ├─ Calcular totalAmount (BigDecimal)
+    │     ├─ Serializar productos → JSON
+    │     ├─ Crear entidad Sale
+    │     └─ saleRepository.save() → SQLite
+    │
+    ├─► pdfServiceClient.generatePdf()  [SÍNCRONO]
+    │     ├─ RestTemplate.exchange()
+    │     ├─ POST /generate-pdf
+    │     ├─ Header: X-API-Key
+    │     └─ Espera respuesta completa (byte[])
+    │
+    ├─► emailServiceClient.sendInvoiceEmail()  [ASÍNCRONO]
+    │     ├─ Codificar PDF → Base64
+    │     ├─ RestTemplate.exchange()
+    │     ├─ POST /send-invoice
+    │     ├─ Header: X-API-Key
+    │     └─ Retorna inmediato (202 Accepted)
+    │
+    └─► return byte[] pdfBytes
 ```
 
-#### Flujo detallado:
+#### Patrones Implementados
 
-1. **Inicio del procesamiento**
-   - Se registra log inicial de procesamiento
-   - Entrada: `SaleRequest` con datos del cliente y productos
+| Patrón | Implementación |
+|--------|----------------|
+| **Saga Orchestrator** | `SalesService` coordina múltiples operaciones distribuidas |
+| **Comunicación Síncrona** | `PdfServiceClient` bloquea hasta recibir PDF completo |
+| **Comunicación Asíncrona** | `EmailServiceClient` retorna inmediato (fire-and-forget) |
+| **Transaction Management** | `@Transactional` garantiza rollback en errores |
+| **Dependency Injection** | Constructor injection con Spring |
 
-2. **Paso 1: Persistencia en base de datos** (`saveSale`)
-   - **Cálculo del total**: Se itera sobre la lista de productos y se suma `product.getTotal()` usando `BigDecimal`
-   - **Serialización**: Los productos se convierten a JSON usando `ObjectMapper.writeValueAsString()`
-   - **Creación de entidad**: Se instancia objeto `Sale` con:
-     - `customerName`: del request
-     - `customerIdentification`: del request
-     - `customerEmail`: del request
-     - `totalAmount`: calculado
-     - `productsJson`: serializado
-   - **Persistencia**: Se invoca `saleRepository.save(sale)` que ejecuta un INSERT en SQLite
-   - **Log**: Se registra ID de la venta guardada
+#### Manejo de Errores
 
-3. **Paso 2: Generación de PDF (Comunicación síncrona)**
-   - **Preparación**:
-     - Headers HTTP: `Content-Type: application/json`, `X-API-Key: pdfServiceApiKey`
-     - Body: `saleRequest` completo
-   - **Invocación HTTP**: `POST http://pdf-service:8081/generate-pdf`
-   - **Espera activa**: El hilo se bloquea esperando la respuesta (SYNC)
-   - **Validación**:
-     - Si `status == 200` y `body != null`: continúa
-     - Si no: lanza `RuntimeException`
-   - **Log**: Confirma generación exitosa de PDF
+- **Exception Handling**: Try-catch en `processSale()`
+- **Transaction Rollback**: `@Transactional` revierte cambios en BD si hay error
+- **Compensación** (comentado): Código indica dónde implementar Saga compensation
+- **Logging**: Console output para trazabilidad
 
-4. **Paso 3: Envío de email (Comunicación asíncrona)**
-   - **Codificación**: PDF se codifica a Base64 usando `Base64.getEncoder().encodeToString()`
-   - **Preparación payload**:
-     - `customer`: objeto completo
-     - `products`: lista completa
-     - `pdfBase64`: PDF codificado
-   - **Preparación headers**: `Content-Type: application/json`, `X-API-Key: emailServiceApiKey`
-   - **Invocación HTTP**: `POST http://email-service:8082/send-invoice`
-   - **Validación no crítica**:
-     - Si `status == 202 (ACCEPTED)`: operación aceptada, se procesará en background
-     - Si no: solo log de advertencia, NO falla el flujo
-   - **Log**: Confirma aceptación o advertencia
-
-5. **Finalización exitosa**
-   - Log de éxito completo
-   - **Return**: `byte[] pdfBytes` para el controller
-
-6. **Manejo de errores**
-   - Cualquier excepción en Pasos 1, 2 o 3 es capturada
-   - Se registra error en log
-   - **Patrón saga**: Comentario indica donde se implementaría compensación/rollback
-   - Se lanza `RuntimeException` envolviendo la excepción original
-   - El decorador `@Transactional` hace rollback automático de la transacción DB
-
-#### Patrones implementados:
-
-- **Saga Orchestrator Pattern**: El `SalesService` coordina múltiples operaciones
-- **Synchronous Communication**: Comunicación con PDF Service es bloqueante
-- **Asynchronous Communication**: Comunicación con Email Service es fire-and-forget (202 Accepted)
-- **Circuit Breaker** (comentado): Se menciona para implementación futura
-- **Compensation** (comentado): Se indica donde implementar rollback en caso de fallo parcial
-
-#### Tipos de comunicación:
+#### Tipos de Comunicación
 
 | Servicio | Tipo | Razón |
 |----------|------|-------|
-| PDF Service | **Síncrona** | El PDF es necesario para la respuesta al cliente |
-| Email Service | **Asíncrona** | El envío del email no es crítico, se procesa en background |
+| **PDF Service** | Síncrona | El PDF es esencial para responder al cliente |
+| **Email Service** | Asíncrona | El envío de email no es crítico, se procesa en background |
 
 ---
 
