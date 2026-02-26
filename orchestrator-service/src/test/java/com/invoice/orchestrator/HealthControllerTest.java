@@ -18,7 +18,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @TestPropertySource(properties = {
-    "spring.datasource.url=jdbc:sqlite:./data/test-sales.db",
+    "spring.datasource.url=jdbc:sqlite::memory:",
     "spring.jpa.hibernate.ddl-auto=create-drop"
 })
 class HealthControllerTest {
