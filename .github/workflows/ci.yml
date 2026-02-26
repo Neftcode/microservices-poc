@@ -44,19 +44,56 @@ jobs:
           distribution: "temurin"
           cache: maven
 
+     # -------------------------------------------------
+      # 3️⃣ Instalación de dependencias
+      # -------------------------------------------------
+      - name: Instalación de dependencias
+        run: |
+          mvn dependency:go-offline --no-transfer-progress 2>&1 | tee 01-install-java.log
+        working-directory: orchestrator-service
+      
+      # -------------------------------------------------
+      # 4️⃣ Validación del proyecto
+      # -------------------------------------------------
+      - name: Validar proyecto
+        run: |
+          mvn validate --no-transfer-progress 2>&1 | tee 02-validate-java.log
+        working-directory: orchestrator-service
+      
+      # -------------------------------------------------
+      # 5️⃣ Compilación
+      # -------------------------------------------------
+      - name: Compilar código
+        run: |
+          mvn compile --no-transfer-progress 2>&1 | tee 03-compile-java.log
+        working-directory: orchestrator-service
+      
+      # -------------------------------------------------
+      # 6️⃣ Ejecutar pruebas
+      # -------------------------------------------------
       - name: Ejecutar pruebas unitarias e integración
-        run: mvn test --no-transfer-progress
+        run: |
+          mvn test --no-transfer-progress 2>&1 | tee 04-test-java.log
         working-directory: orchestrator-service
-
-      - name: Compilar JAR (sin pruebas, ya ejecutadas)
-        run: mvn package -DskipTests --no-transfer-progress
+      
+      # -------------------------------------------------
+      # 7️⃣ Empaquetado
+      # -------------------------------------------------
+      - name: Empaquetar aplicación
+        run: |
+          mvn package -DskipTests --no-transfer-progress 2>&1 | tee 05-package-java.log
         working-directory: orchestrator-service
-
-      - name: Subir artefacto JAR
+      
+      # -------------------------------------------------
+      # 8️⃣ Subir artefactos
+      # -------------------------------------------------
+      - name: Subir artefacto JAR y logs
         uses: actions/upload-artifact@v4
         with:
-          name: orchestrator-jar
-          path: orchestrator-service/target/*.jar
+          name: orchestrator-build-${{ github.run_number }}
+          path: |
+            orchestrator-service/target/*.jar
+            orchestrator-service/*.log
           retention-days: 7
 
   # ---------------------------------------------------------------------------
@@ -77,17 +114,30 @@ jobs:
           cache: "pip"
           cache-dependency-path: "pdf-service/requirements.txt"
 
-      - name: Instalar dependencias de producción
-        run: pip install -r requirements.txt
+      - name: Instalar dependencias 
+        run: |
+          pip install -r requirements.txt 2>&1 | tee install-py.log
         working-directory: pdf-service
 
       - name: Instalar dependencias de testing
-        run: pip install -r requirements-test.txt
+        run: |
+          pip install -r requirements-test.txt 2>&1 | tee install-test-py.log
         working-directory: pdf-service
 
       - name: Ejecutar pruebas con pytest
-        run: pytest tests/ -v --tb=short
+        run: |
+          pytest tests/ -v --tb=short 2>&1 | tee test-py.log
         working-directory: pdf-service
+
+      # -----------------------------
+      # Subir logs como artefacto
+      # -----------------------------
+      - name: Subir logs
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdf-service-logs-${{ github.run_number }}
+          path: pdf-service/*.log
+          retention-days: 7
 
   # ---------------------------------------------------------------------------
   # Job 3: Testear el Notification Service (Node.js 20 + Express)
@@ -107,13 +157,49 @@ jobs:
           cache: "npm"
           cache-dependency-path: notification-service/package-lock.json
 
-      - name: Instalar dependencias (incluyendo devDependencies para Jest)
-        run: npm install
-        working-directory: notification-service
-
-      - name: Ejecutar pruebas con Jest
-        run: npm test
-        working-directory: notification-service
+      # -------------------------------------------------
+      # 1️⃣ Instalación de dependencias
+      # -------------------------------------------------
+      - name: Instalar dependencias
+        run: |
+          pip install -r requirements.txt 2>&1 | tee 01-install-py.log
+        working-directory: pdf-service
+      
+      - name: Instalar dependencias de testing
+        run: |
+          pip install -r requirements-test.txt 2>&1 | tee 02-install-test-py.log
+        working-directory: pdf-service
+      
+      # -------------------------------------------------
+      # 2️⃣ Validación de código (Lint)
+      # -------------------------------------------------
+      - name: Instalar herramienta de lint (ruff)
+        run: |
+          pip install ruff 2>&1 | tee 03-install-lint-py.log
+        working-directory: pdf-service
+      
+      - name: Validar código con ruff
+        run: |
+          ruff check . 2>&1 | tee 04-lint-py.log
+        working-directory: pdf-service
+      
+      # -------------------------------------------------
+      # 3️⃣ Ejecutar pruebas
+      # -------------------------------------------------
+      - name: Ejecutar pruebas con pytest
+        run: |
+          pytest tests/ -v --tb=short 2>&1 | tee 05-test-py.log
+        working-directory: pdf-service
+      
+      # -------------------------------------------------
+      # 4️⃣ Subir logs como artefacto
+      # -------------------------------------------------
+      - name: Subir logs Python
+        uses: actions/upload-artifact@v4
+        with:
+          name: pdf-service-build-${{ github.run_number }}
+          path: pdf-service/*.log
+          retention-days: 7
 
   # ---------------------------------------------------------------------------
   # Job 4: Build del Frontend (React 18 + Vite)
@@ -133,19 +219,49 @@ jobs:
           cache: "npm"
           cache-dependency-path: frontend/package-lock.json
 
+      # -------------------------------------------------
+      # 1️⃣ Instalación de dependencias
+      # -------------------------------------------------
       - name: Instalar dependencias
-        run: npm ci
+        run: |
+          npm ci 2>&1 | tee 01-install-nd.log
         working-directory: frontend
-
+      
+      # -------------------------------------------------
+      # 2️⃣ Validación de código (Lint)
+      # -------------------------------------------------
+      - name: Validar código con ESLint
+        run: |
+          npm run lint 2>&1 | tee 02-lint-nd.log
+        working-directory: frontend
+        continue-on-error: false
+      
+      # -------------------------------------------------
+      # 3️⃣ Ejecutar pruebas
+      # -------------------------------------------------
+      - name: Ejecutar pruebas
+        run: |
+          npm test -- --watchAll=false 2>&1 | tee 03-test-nd.log
+        working-directory: frontend
+      
+      # -------------------------------------------------
+      # 4️⃣ Build de producción
+      # -------------------------------------------------
       - name: Compilar build de producción
-        run: npm run build
+        run: |
+          npm run build 2>&1 | tee 04-build-nd.log
         working-directory: frontend
-
-      - name: Subir artefacto del build
+      
+      # -------------------------------------------------
+      # 5️⃣ Subir artefactos (build + logs)
+      # -------------------------------------------------
+      - name: Subir artefacto del build y logs
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-dist
-          path: frontend/dist/
+          name: frontend-build-${{ github.run_number }}
+          path: |
+            frontend/dist/
+            frontend/*.log
           retention-days: 7
 
   # ---------------------------------------------------------------------------
