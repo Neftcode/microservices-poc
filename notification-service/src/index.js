@@ -31,7 +31,7 @@ app.use(validateApiKey);
 app.use('/', emailRoutes);
 
 // Middleware de manejo de errores
-app.use((err, req, res, next) => {
+app.use((err, req, res) => {
     console.error('❌ Error no manejado:', err.stack);
     res.status(500).json({
         error: 'Error interno del servidor',
@@ -57,7 +57,7 @@ app.listen(PORT, () => {
 });
 
 // Manejo de errores no capturados
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason) => {
     console.error('❌ Unhandled Rejection:', reason);
 });
 
