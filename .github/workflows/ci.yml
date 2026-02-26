@@ -177,3 +177,53 @@ jobs:
           echo "    ✅  Notification Service (Node.js)"
           echo "    ✅  Frontend (React + Vite)"
           echo "=============================================="
+
+  # ---------------------------------------------------------------------------
+  # Job 6: Aprobación manual para despliegue a UAT
+  # ---------------------------------------------------------------------------
+  # Requiere configurar el environment "uat" en GitHub:
+  #   Settings > Environments > New environment > "uat"
+  #   → Marcar "Required reviewers" y agregar los aprobadores
+  # ---------------------------------------------------------------------------
+  approve-uat:
+    name: "Aprobación para UAT"
+    runs-on: ubuntu-latest
+    needs: ci-summary
+    if: github.ref == 'refs/heads/uat' && github.event_name == 'push'
+    environment: uat
+
+    steps:
+      - name: Aprobado para UAT
+        run: |
+          echo "=============================================="
+          echo "  Despliegue a UAT aprobado"
+          echo "=============================================="
+          echo "  Rama   : ${{ github.ref_name }}"
+          echo "  Commit : ${{ github.sha }}"
+          echo "  Actor  : ${{ github.actor }}"
+          echo "=============================================="
+
+  # ---------------------------------------------------------------------------
+  # Job 7: Aprobación manual para despliegue a Producción
+  # ---------------------------------------------------------------------------
+  # Requiere configurar el environment "prd" en GitHub:
+  #   Settings > Environments > New environment > "prd"
+  #   → Marcar "Required reviewers" y agregar los aprobadores
+  # ---------------------------------------------------------------------------
+  approve-prd:
+    name: "Aprobación para Producción"
+    runs-on: ubuntu-latest
+    needs: ci-summary
+    if: github.ref == 'refs/heads/prd' && github.event_name == 'push'
+    environment: prd
+
+    steps:
+      - name: Aprobado para Producción
+        run: |
+          echo "=============================================="
+          echo "  Despliegue a PRODUCCIÓN aprobado"
+          echo "=============================================="
+          echo "  Rama   : ${{ github.ref_name }}"
+          echo "  Commit : ${{ github.sha }}"
+          echo "  Actor  : ${{ github.actor }}"
+          echo "=============================================="
