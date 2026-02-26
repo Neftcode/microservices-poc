@@ -2,7 +2,7 @@
 
 ![CI Pipeline](https://github.com/Neftcode/microservices-poc/actions/workflows/ci.yml/badge.svg)
 
-## Grupo #3: Integrantes
+## Integrantes
 
 - Luis Alfredo González Mercado
 - Brian Maldonado

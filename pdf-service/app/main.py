@@ -117,7 +117,7 @@ async def generate_pdf(invoice_data: InvoiceRequest):
         HTTPException: Si hay error al generar el PDF
     """
     try:
-        print(f"📥 Recibida petición para generar PDF")
+        print("📥 Recibida petición para generar PDF")
         print(f"   Cliente: {invoice_data.customer.name}")
         print(f"   Productos: {len(invoice_data.products)}")
         
