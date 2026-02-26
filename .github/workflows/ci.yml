@@ -90,7 +90,7 @@ jobs:
       - name: Subir artefacto JAR y logs
         uses: actions/upload-artifact@v4
         with:
-          name: orchestrator-build-${{ github.run_number }}
+          name: orchestrator-build-logs-${{ github.run_number }}
           path: |
             orchestrator-service/target/*.jar
             orchestrator-service/*.log
@@ -113,49 +113,6 @@ jobs:
           python-version: "3.11"
           cache: "pip"
           cache-dependency-path: "pdf-service/requirements.txt"
-
-      - name: Instalar dependencias 
-        run: |
-          pip install -r requirements.txt 2>&1 | tee install-py.log
-        working-directory: pdf-service
-
-      - name: Instalar dependencias de testing
-        run: |
-          pip install -r requirements-test.txt 2>&1 | tee install-test-py.log
-        working-directory: pdf-service
-
-      - name: Ejecutar pruebas con pytest
-        run: |
-          pytest tests/ -v --tb=short 2>&1 | tee test-py.log
-        working-directory: pdf-service
-
-      # -----------------------------
-      # Subir logs como artefacto
-      # -----------------------------
-      - name: Subir logs
-        uses: actions/upload-artifact@v4
-        with:
-          name: pdf-service-logs-${{ github.run_number }}
-          path: pdf-service/*.log
-          retention-days: 7
-
-  # ---------------------------------------------------------------------------
-  # Job 3: Testear el Notification Service (Node.js 20 + Express)
-  # ---------------------------------------------------------------------------
-  test-notification-service:
-    name: "Test Notification Service (Node.js)"
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout del código
-        uses: actions/checkout@v4
-
-      - name: Configurar Node.js 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-          cache-dependency-path: notification-service/package-lock.json
 
       # -------------------------------------------------
       # 1️⃣ Instalación de dependencias
@@ -197,8 +154,61 @@ jobs:
       - name: Subir logs Python
         uses: actions/upload-artifact@v4
         with:
-          name: pdf-service-build-${{ github.run_number }}
+          name: pdf-service-build-logs-${{ github.run_number }}
           path: pdf-service/*.log
+          retention-days: 7
+
+  # ---------------------------------------------------------------------------
+  # Job 3: Testear el Notification Service (Node.js 20 + Express)
+  # ---------------------------------------------------------------------------
+  test-notification-service:
+    name: "Test Notification Service (Node.js)"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: notification-service/package-lock.json
+
+      # -------------------------------------------------
+      # 1️⃣ Instalación de dependencias
+      # -------------------------------------------------
+      - name: Instalar dependencias (incluye devDependencies para Jest)
+        run: |
+          npm ci 2>&1 | tee 01-install-nd.log
+        working-directory: notification-service
+      
+      # -------------------------------------------------
+      # 2️⃣ Validación de código (Lint)
+      # -------------------------------------------------
+      - name: Validar código con ESLint
+        run: |
+          npm run lint 2>&1 | tee 02-lint-nd.log
+        working-directory: notification-service
+        continue-on-error: false
+      
+      # -------------------------------------------------
+      # 3️⃣ Ejecutar pruebas con Jest
+      # -------------------------------------------------
+      - name: Ejecutar pruebas con Jest
+        run: |
+          npm test -- --ci --coverage 2>&1 | tee 03-test-nd.log
+        working-directory: notification-service
+      
+      # -------------------------------------------------
+      # 4️⃣ Subir logs como artefacto
+      # -------------------------------------------------
+      - name: Subir logs notification-service
+        uses: actions/upload-artifact@v4
+        with:
+          name: notification-back-logs-${{ github.run_number }}
+          path: notification-service/*.log
           retention-days: 7
 
   # ---------------------------------------------------------------------------
@@ -237,11 +247,11 @@ jobs:
         continue-on-error: false
       
       # -------------------------------------------------
-      # 3️⃣ Ejecutar pruebas
+      # 3️⃣ Ejecutar pruebas (si aplica)
       # -------------------------------------------------
       - name: Ejecutar pruebas
         run: |
-          npm test -- --watchAll=false 2>&1 | tee 03-test-nd.log
+          npm test -- --ci 2>&1 | tee 03-test-nd.log
         working-directory: frontend
       
       # -------------------------------------------------
@@ -253,12 +263,12 @@ jobs:
         working-directory: frontend
       
       # -------------------------------------------------
-      # 5️⃣ Subir artefactos (build + logs)
+      # 5️⃣ Subir artefactos (dist + logs)
       # -------------------------------------------------
       - name: Subir artefacto del build y logs
         uses: actions/upload-artifact@v4
         with:
-          name: frontend-build-${{ github.run_number }}
+          name: frontend-artifacts-logs-${{ github.run_number }}
           path: |
             frontend/dist/
             frontend/*.log
