@@ -4,7 +4,6 @@ import com.invoice.orchestrator.model.dto.SaleRequest;
 import com.invoice.orchestrator.service.SalesService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -15,7 +14,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.invoice.orchestrator.model.entity.Sale;
-import java.util.Map;
 
 /**
  * Controlador REST para gestión de ventas.

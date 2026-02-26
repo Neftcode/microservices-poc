@@ -172,6 +172,40 @@ Este proyecto implementa dos pipelines: **CI con GitHub Actions** y **CD con Jen
 feature → dev → uat → prd
 ```
 
+### Diagrama del flujo CI/CD
+
+```mermaid
+flowchart TD
+    A([👨‍💻 git push / PR]) --> B{Rama}
+    B -->|dev| CI
+    B -->|uat| CI
+    B -->|prd| CI
+
+    subgraph CI["⚙️ CI — GitHub Actions"]
+        direction LR
+        C1[Checkout] --> C2[Tests Orchestrator\nJava · Maven]
+        C1 --> C3[Tests PDF Service\nPython · pytest]
+        C1 --> C4[Tests Notification\nNode.js · Jest]
+        C1 --> C5[Build Frontend\nReact · Vite]
+        C2 & C3 & C4 & C5 --> C6([✅ CI aprobado])
+    end
+
+    CI --> CD
+
+    subgraph CD["🚀 CD — Jenkins"]
+        direction TB
+        D1[Clonar repositorio] --> D2[Determinar entorno]
+        D2 --> D3[Build Docker images\nparalelo × 4]
+        D3 --> D4[Push DockerHub]
+        D4 --> D5{Rama}
+    end
+
+    D5 -->|dev| E1([🖥️ Docker Compose · DEV])
+    D5 -->|uat| E2([☸️ Kubernetes · UAT])
+    D5 -->|prd| E3[👤 Aprobación manual]
+    E3 --> E4([☸️ Kubernetes · PRD])
+```
+
 ### Pipeline CI — GitHub Actions (`.github/workflows/ci.yml`)
 
 Se activa automáticamente en cada **push** o **pull request** a `dev`, `uat` o `prd`.
