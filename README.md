@@ -1,11 +1,11 @@
 # Sistema de Facturación Electrónica
 
+![CI Pipeline](https://github.com/Neftcode/microservices-poc/actions/workflows/ci.yml/badge.svg)
+
 ## Grupo #3: Integrantes
 
-- Álvaro Jesús Muñoz Martínez
-- Julián Camilo Corredor Rojas
 - Luis Alfredo González Mercado
-- Luis Eduardo González Mejía
+- Brian Maldonado
 - Carlos Alberto Arevalo Martinez
 
 ## Descripción
@@ -153,6 +153,101 @@ netstat -ano | findstr :8080
 # Linux/Mac
 lsof -i :8080
 ```
+
+---
+
+## CI/CD Pipeline
+
+Este proyecto implementa dos pipelines: **CI con GitHub Actions** y **CD con Jenkins**.
+
+### Estrategia de Ramas
+
+| Rama  | Entorno     | Descripción                                       |
+|-------|-------------|---------------------------------------------------|
+| `dev` | Desarrollo  | Rama base. Integración de nuevas funcionalidades  |
+| `uat` | Staging/UAT | Pruebas de aceptación antes de producción         |
+| `prd` | Producción  | Versión estable, despliegue con aprobación manual |
+
+```
+feature → dev → uat → prd
+```
+
+### Pipeline CI — GitHub Actions (`.github/workflows/ci.yml`)
+
+Se activa automáticamente en cada **push** o **pull request** a `dev`, `uat` o `prd`.
+
+| Job | Servicio | Herramienta | Acciones |
+|-----|----------|-------------|----------|
+| `test-orchestrator` | Java Spring Boot | Maven + JUnit 5 | Compilar, testear, empaquetar JAR |
+| `test-pdf-service` | Python FastAPI | pytest + httpx | Instalar deps, correr tests async |
+| `test-notification-service` | Node.js Express | Jest + supertest | Instalar deps, correr tests |
+| `build-frontend` | React + Vite | npm + Vite | Instalar deps, build de producción |
+| `ci-summary` | — | — | Resumen final (solo si todos pasan) |
+
+```
+push/PR → checkout → setup runtimes → install deps → run tests → build → summary
+```
+
+### Pipeline CD — Jenkins (`Jenkinsfile`)
+
+Gestiona el despliegue de las imágenes Docker según la rama activa.
+
+| Stage | Descripción |
+|-------|-------------|
+| `Clonar Repositorio` | `checkout scm` — clona el código fuente |
+| `Determinar Entorno` | Detecta `dev`/`uat`/`prd` y configura variables |
+| `Construir Imágenes Docker` | Build paralelo de 4 imágenes (orchestrator, pdf, notification, frontend) |
+| `Publicar Imágenes en DockerHub` | `docker push` con tag `BUILD_NUMBER-COMMIT` y `ENV-latest` |
+| `Desplegar en Desarrollo` | `docker-compose up` (solo rama `dev`) |
+| `Desplegar en UAT` | `kubectl set image` en namespace `invoice-uat` (solo rama `uat`) |
+| `Aprobación para Producción` | Input manual requerido — 15 min timeout (solo rama `prd`) |
+| `Desplegar en Producción` | `kubectl set image` en namespace `invoice-prd` (solo rama `prd`) |
+
+```
+Jenkinsfile CD:
+  dev  → Build → Push DockerHub → Deploy Docker Compose (dev)
+  uat  → Build → Push DockerHub → Deploy Kubernetes (invoice-uat)
+  prd  → Build → Push DockerHub → [Aprobación Manual] → Deploy Kubernetes (invoice-prd)
+```
+
+### Configurar Jenkins (credenciales requeridas)
+
+En Jenkins > Manage Credentials, agregar:
+
+| ID | Tipo | Descripción |
+|----|------|-------------|
+| `dockerhub-credentials` | Username/Password | Usuario y token de DockerHub |
+
+### Correr los tests localmente
+
+**Java (Orchestrator):**
+```bash
+cd orchestrator-service
+mvn test
+```
+
+**Python (PDF Service):**
+```bash
+cd pdf-service
+pip install -r requirements.txt -r requirements-test.txt
+pytest tests/ -v
+```
+
+**Node.js (Notification Service):**
+```bash
+cd notification-service
+npm install
+npm test
+```
+
+**Frontend:**
+```bash
+cd frontend
+npm ci
+npm run build
+```
+
+---
 
 ## Licencia
 

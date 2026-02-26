@@ -2,10 +2,9 @@
 # Pipeline de Integración Continua (CI) - Sistema de Facturación Electrónica
 # =============================================================================
 # Se ejecuta automáticamente en cada push o pull request a las ramas:
-#   - dev   → entorno de desarrollo
+#   - dev   → entorno de desarrollo (rama base)
 #   - uat   → entorno de pruebas/staging
 #   - prd   → entorno de producción
-#   - main  → rama principal de integración
 #
 # Herramientas: GitHub Actions
 # Servicios cubiertos: orchestrator (Java), pdf-service (Python),
@@ -17,13 +16,11 @@ name: CI Pipeline
 on:
   push:
     branches:
-      - main
       - dev
       - uat
       - prd
   pull_request:
     branches:
-      - main
       - dev
       - uat
       - prd
