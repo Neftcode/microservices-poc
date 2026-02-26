@@ -8,7 +8,8 @@ const request = require('supertest');
 // Mock de las dependencias externas antes de cargar la app
 jest.mock('nodemailer', () => ({
     createTransport: jest.fn().mockReturnValue({
-        sendMail: jest.fn().mockResolvedValue({ messageId: 'test-id' })
+        sendMail: jest.fn().mockResolvedValue({ messageId: 'test-id' }),
+        verify: jest.fn().mockImplementation((cb) => cb(null, true))
     })
 }));
 
