@@ -6,7 +6,7 @@ Intercepta las peticiones y valida la autenticación.
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-from fastapi import Request, HTTPException, status
+from fastapi import Request, status
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 

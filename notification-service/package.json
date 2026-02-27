@@ -6,10 +6,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "test": "jest --testPathPattern=src/__tests__ --forceExit"
-  },
-  "jest": {
-    "testEnvironment": "node"
+    "lint": "eslint ."
   },
   "keywords": [
     "microservice",
@@ -20,13 +17,14 @@
   "author": "Sistema de Facturación",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.18.2",
-    "nodemailer": "^6.9.7",
+    "cors": "^2.8.5",
     "dotenv": "^16.3.1",
-    "cors": "^2.8.5"
+    "express": "^4.18.2",
+    "nodemailer": "^6.9.7"
   },
   "devDependencies": {
-    "jest": "^29.7.0",
-    "supertest": "^6.3.4"
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.0.2",
+    "globals": "^17.3.0"
   }
 }

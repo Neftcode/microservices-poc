@@ -1,0 +1,50 @@
+pipeline {
+    agent any
+
+    options {
+        timeout(time: 20, unit: 'MINUTES')
+        disableConcurrentBuilds()
+    }
+
+    environment {
+        COMPOSE_FILE   = 'docker-compose.cd-simple.yml'
+        SERVICE_NAME   = 'pdf-service-cd'
+        HOST_PORT      = '8081'
+    }
+
+    stages {
+        stage('Clonar Repositorio') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Construir y Desplegar') {
+            steps {
+                sh '''
+                    docker-compose -f "$COMPOSE_FILE" down --remove-orphans || true
+                    docker-compose -f "$COMPOSE_FILE" up -d --build
+                '''
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                sh '''
+                    sleep 5
+                    docker-compose -f "$COMPOSE_FILE" ps
+                    docker-compose -f "$COMPOSE_FILE" ps "$SERVICE_NAME" | grep -q "Up"
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "CD simple completado: $SERVICE_NAME en http://localhost:$HOST_PORT/health"
+        }
+        always {
+            sh 'docker-compose -f "$COMPOSE_FILE" ps || true'
+        }
+    }
+}

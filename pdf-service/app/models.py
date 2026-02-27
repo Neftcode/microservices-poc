@@ -3,7 +3,7 @@ Modelos Pydantic para validación de datos.
 Define las estructuras de datos esperadas en las peticiones.
 """
 
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field
 from typing import List
 from decimal import Decimal
 
