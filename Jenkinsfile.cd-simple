@@ -1,0 +1,66 @@
+pipeline {
+    agent any
+
+    options {
+        timeout(time: 20, unit: 'MINUTES')
+        disableConcurrentBuilds()
+    }
+
+    environment {
+        IMAGE_NAME     = 'pdf-service-local'
+        CONTAINER_NAME = 'pdf-service-cd'
+        HOST_PORT      = '8081'
+    }
+
+    stages {
+        stage('Clonar Repositorio') {
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Construir Imagen Docker') {
+            steps {
+                dir('pdf-service') {
+                    sh '''
+                        docker build \
+                          -t "$IMAGE_NAME:$BUILD_NUMBER" \
+                          -t "$IMAGE_NAME:latest" \
+                          .
+                    '''
+                }
+            }
+        }
+
+        stage('Desplegar Microservicio') {
+            steps {
+                sh '''
+                    docker rm -f "$CONTAINER_NAME" || true
+                    docker run -d \
+                      --name "$CONTAINER_NAME" \
+                      -p "$HOST_PORT:8081" \
+                      -e PDF_SERVICE_API_KEY=pdf-service-secret-key-987654321 \
+                      "$IMAGE_NAME:latest"
+                '''
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                sh '''
+                    sleep 5
+                    test "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_NAME")" = "true"
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "CD simple completado: $CONTAINER_NAME en http://localhost:$HOST_PORT/health"
+        }
+        always {
+            sh 'docker ps --filter "name=$CONTAINER_NAME" || true'
+        }
+    }
+}
