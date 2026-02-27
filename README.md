@@ -283,6 +283,17 @@ npm run build
 
 ---
 
+##  Conclusión
+Se implementó una base CI/CD funcional para la aplicación, cubriendo integración continua en GitHub Actions y definición de entrega continua en Jenkins, alineado con los requisitos de la actividad.
+
+---
+
+## Anexos (placeholders para pegar capturas)
+- `[Pegar aquí captura GitHub Actions - corrida completa]`
+- `[Pegar aquí captura GitHub Actions - job Java]`
+- `[Pegar aquí captura Jenkins - Stage View]`
+- `[Pegar aquí captura Jenkins - Console Output]`
+
 ## Licencia
 
-Proyecto académico - Universidad de La Sabana
+Proyecto académico - Universidad de La Sabana ##
