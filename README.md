@@ -294,6 +294,37 @@ Se implementó una base CI/CD funcional para la aplicación, cubriendo integraci
 - `[Pegar aquí captura Jenkins - Stage View]`
 - `[Pegar aquí captura Jenkins - Console Output]`
 
+## CD con Jenkins (Simple)
+
+Para pruebas rápidas del laboratorio se incluye un pipeline mínimo en `Jenkinsfile.cd-simple` que despliega solo `pdf-service` con Docker Compose.
+
+### Archivos usados
+- `Jenkinsfile.cd-simple`
+- `docker-compose.cd-simple.yml`
+
+### Stages del pipeline simple
+1. `Clonar Repositorio`
+2. `Construir y Desplegar` (`docker-compose up -d --build`)
+3. `Health Check` (verifica que el contenedor quede `Up`)
+
+### Cómo ejecutarlo en Jenkins
+1. Crear job tipo **Multibranch Pipeline**.
+2. Configurar repositorio Git (URL del proyecto).
+3. En `Build Configuration` usar:
+   - `Mode`: by Jenkinsfile
+   - `Script Path`: `Jenkinsfile.cd-simple`
+4. Ejecutar `Scan Multibranch Pipeline Now`.
+5. Entrar a la rama `dev` y ejecutar `Build Now`.
+
+### Verificación
+- Stage View debe mostrar:
+  - `Declarative: Checkout SCM`
+  - `Clonar Repositorio`
+  - `Construir y Desplegar`
+  - `Health Check`
+  - `Declarative: Post Actions`
+- El microservicio queda expuesto en `http://localhost:8081/health`.
+
 ## Licencia
 
 Proyecto académico - Universidad de La Sabana ##
