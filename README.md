@@ -2,7 +2,12 @@
 
 ![CI Pipeline](https://github.com/Neftcode/microservices-poc/actions/workflows/ci.yml/badge.svg)
 
-## Grupo #3: Integrantes
+<img src="logo_unisabana.png" alt="Universidad de La Sabana" width="400"/>
+
+Maestría en Arquitectura de Software - Fundamentos DevOps - Universidad de La Sabana
+
+
+## Integrantes
 
 - Luis Alfredo González Mercado
 - Brian Maldonado
@@ -183,10 +188,10 @@ flowchart TD
 
     subgraph CI["⚙️ CI — GitHub Actions"]
         direction LR
-        C1[Checkout] --> C2[Tests Orchestrator\nJava · Maven]
-        C1 --> C3[Tests PDF Service\nPython · pytest]
-        C1 --> C4[Tests Notification\nNode.js · Jest]
-        C1 --> C5[Build Frontend\nReact · Vite]
+        C1[Checkout] --> C2[Tests Orchestrator Java · Maven]
+        C1 --> C3[Tests PDF Service Python · pytest]
+        C1 --> C4[Tests Notification Node.js · Jest]
+        C1 --> C5[Build Frontend React · Vite]
         C2 & C3 & C4 & C5 --> C6([✅ CI aprobado])
     end
 
@@ -195,15 +200,16 @@ flowchart TD
     subgraph CD["🚀 CD — Jenkins"]
         direction TB
         D1[Clonar repositorio] --> D2[Determinar entorno]
-        D2 --> D3[Build Docker images\nparalelo × 4]
+        D2 --> D3[Build Docker images paralelo × 4]
         D3 --> D4[Push DockerHub]
         D4 --> D5{Rama}
     end
 
     D5 -->|dev| E1([🖥️ Docker Compose · DEV])
-    D5 -->|uat| E2([☸️ Kubernetes · UAT])
-    D5 -->|prd| E3[👤 Aprobación manual]
-    E3 --> E4([☸️ Kubernetes · PRD])
+    D5 -->|uat| E2[👤 Aprobación manual · UAT]
+    D5 -->|prd| E3[👤 Aprobación manual · PRD]
+    E2 --> E4([☸️ Kubernetes · UAT])
+    E3 --> E5([☸️ Kubernetes · PRD])
 ```
 
 ### Pipeline CI — GitHub Actions (`.github/workflows/ci.yml`)
@@ -280,6 +286,42 @@ cd frontend
 npm ci
 npm run build
 ```
+
+## CD con Jenkins (Simple)
+
+Para pruebas rápidas del laboratorio se incluye un pipeline mínimo en `Jenkinsfile.cd-simple` que despliega solo `pdf-service` con Docker Compose.
+
+### Archivos usados
+- `Jenkinsfile.cd-simple`
+- `docker-compose.cd-simple.yml`
+
+### Stages del pipeline simple
+1. `Clonar Repositorio`
+2. `Construir y Desplegar` (`docker-compose up -d --build`)
+3. `Health Check` (verifica que el contenedor quede `Up`)
+
+### Cómo ejecutarlo en Jenkins
+1. Crear job tipo **Multibranch Pipeline**.
+2. Configurar repositorio Git (URL del proyecto).
+3. En `Build Configuration` usar:
+   - `Mode`: by Jenkinsfile
+   - `Script Path`: `Jenkinsfile.cd-simple`
+4. Ejecutar `Scan Multibranch Pipeline Now`.
+5. Entrar a la rama `dev` y ejecutar `Build Now`.
+
+### Verificación
+- Stage View debe mostrar:
+  - `Declarative: Checkout SCM`
+  - `Clonar Repositorio`
+  - `Construir y Desplegar`
+  - `Health Check`
+  - `Declarative: Post Actions`
+- El microservicio queda expuesto en `http://localhost:8081/health`.
+
+---
+
+##  Conclusión
+Se implementó una base CI/CD funcional para la aplicación, cubriendo integración continua en GitHub Actions y definición de entrega continua en Jenkins, alineado con los requisitos de la actividad.
 
 ---
 

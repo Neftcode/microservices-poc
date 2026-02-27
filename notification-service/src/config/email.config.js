@@ -29,7 +29,7 @@ function createEmailTransporter() {
     const transporter = nodemailer.createTransport(config);
 
     // Verificar configuración al iniciar
-    transporter.verify((error, success) => {
+    transporter.verify((error) => {
         if (error) {
             console.error('❌ Error en configuración de email:', error.message);
             console.error('   Verifica GMAIL_USER y GMAIL_APP_PASSWORD');

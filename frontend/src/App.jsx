@@ -367,7 +367,7 @@ function App() {
           {!pdfUrl && !error && !loading && (
             <div className="placeholder">
               <p>📝 La factura aparecerá aquí una vez realizada la venta.</p>
-              <p>Complete el formulario y haga clic en "Realizar Venta".</p>
+              <p>Complete el formulario y haga clic en *Realizar Venta*.</p>
             </div>
           )}
 

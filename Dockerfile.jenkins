@@ -1,0 +1,8 @@
+FROM jenkins/jenkins:lts
+
+USER root
+
+# Install Docker CLI + docker-compose (v1) for Jenkins shell stages.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends docker.io docker-compose \
+    && rm -rf /var/lib/apt/lists/*
