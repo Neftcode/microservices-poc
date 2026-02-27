@@ -2,10 +2,7 @@ FROM jenkins/jenkins:lts
 
 USER root
 
-# Install Docker CLI + Compose plugin so pipeline shell steps can run
-# docker, docker build, docker push, and docker compose commands.
+# Install Docker CLI + docker-compose (v1) for Jenkins shell stages.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends docker.io docker-compose-plugin \
-    && printf '#!/bin/sh\nexec docker compose "$@"\n' > /usr/local/bin/docker-compose \
-    && chmod +x /usr/local/bin/docker-compose \
+    && apt-get install -y --no-install-recommends docker.io docker-compose \
     && rm -rf /var/lib/apt/lists/*

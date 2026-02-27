@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  pdf-service-cd:
+    container_name: pdf-service-cd
+    build:
+      context: ./pdf-service
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    environment:
+      - PDF_SERVICE_API_KEY=pdf-service-secret-key-987654321
+    restart: unless-stopped

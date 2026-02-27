@@ -7,8 +7,8 @@ pipeline {
     }
 
     environment {
-        IMAGE_NAME     = 'pdf-service-local'
-        CONTAINER_NAME = 'pdf-service-cd'
+        COMPOSE_FILE   = 'docker-compose.cd-simple.yml'
+        SERVICE_NAME   = 'pdf-service-cd'
         HOST_PORT      = '8081'
     }
 
@@ -19,28 +19,11 @@ pipeline {
             }
         }
 
-        stage('Construir Imagen Docker') {
-            steps {
-                dir('pdf-service') {
-                    sh '''
-                        docker build \
-                          -t "$IMAGE_NAME:$BUILD_NUMBER" \
-                          -t "$IMAGE_NAME:latest" \
-                          .
-                    '''
-                }
-            }
-        }
-
-        stage('Desplegar Microservicio') {
+        stage('Construir y Desplegar') {
             steps {
                 sh '''
-                    docker rm -f "$CONTAINER_NAME" || true
-                    docker run -d \
-                      --name "$CONTAINER_NAME" \
-                      -p "$HOST_PORT:8081" \
-                      -e PDF_SERVICE_API_KEY=pdf-service-secret-key-987654321 \
-                      "$IMAGE_NAME:latest"
+                    docker-compose -f "$COMPOSE_FILE" down --remove-orphans || true
+                    docker-compose -f "$COMPOSE_FILE" up -d --build
                 '''
             }
         }
@@ -49,7 +32,8 @@ pipeline {
             steps {
                 sh '''
                     sleep 5
-                    test "$(docker inspect -f '{{.State.Running}}' "$CONTAINER_NAME")" = "true"
+                    docker-compose -f "$COMPOSE_FILE" ps
+                    docker-compose -f "$COMPOSE_FILE" ps "$SERVICE_NAME" | grep -q "Up"
                 '''
             }
         }
@@ -57,10 +41,10 @@ pipeline {
 
     post {
         success {
-            echo "CD simple completado: $CONTAINER_NAME en http://localhost:$HOST_PORT/health"
+            echo "CD simple completado: $SERVICE_NAME en http://localhost:$HOST_PORT/health"
         }
         always {
-            sh 'docker ps --filter "name=$CONTAINER_NAME" || true'
+            sh 'docker-compose -f "$COMPOSE_FILE" ps || true'
         }
     }
 }
